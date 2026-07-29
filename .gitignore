@@ -1,0 +1,23 @@
+# Environments
+venv/
+.env
+.env*
+*.env
+
+# Python artifacts
+__pycache__/
+*.py[cod]
+*$py.class
+*.egg-info/
+.eggs/
+dist/
+build/
+
+# Temporary Scraped Media & Logs
+downloads/
+logs/
+*.log
+
+# IDEs
+.vscode/
+.idea/
