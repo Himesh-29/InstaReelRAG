@@ -40,15 +40,3 @@ def init_db(db_path: str = "instareelrag.db"):
     Base.metadata.create_all(engine)
     SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
     return SessionLocal()
-
-def get_video_stem_by_shortcode(db_session, shortcode: str) -> str:
-    """Returns the filename stem (e.g. '2017-02-28_14-00-55_UTC') for a given Instagram shortcode."""
-    if not shortcode:
-        return None
-    try:
-        video = db_session.query(Video).filter_by(shortcode=shortcode).first()
-        if video and video.local_video_path:
-            return os.path.splitext(os.path.basename(video.local_video_path))[0]
-    except Exception:
-        pass
-    return None

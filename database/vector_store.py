@@ -3,7 +3,7 @@ import chromadb
 from chromadb.config import Settings
 from sentence_transformers import SentenceTransformer
 import uuid
-from config import get_config, get_device
+from config import get_config
 from config.logger import setup_logger
 
 logger = setup_logger("VectorStore")
@@ -11,11 +11,11 @@ logger = setup_logger("VectorStore")
 class LocalEmbeddingFunction:
     """Wrapper around sentence-transformers to use as a Chroma embedding function."""
     def __init__(self, model_name=None):
+        from config import DEVICE
         config = get_config()
         self.model_name = model_name or config["retrieval"]["embedding_model"]
-        device = get_device()
-        logger.info(f"Loading embedding model '{self.model_name}' on device: {device.upper()}...")
-        self.model = SentenceTransformer(self.model_name, device=device)
+        logger.info(f"Loading embedding model '{self.model_name}' on device: {DEVICE.upper()}...")
+        self.model = SentenceTransformer(self.model_name, device=DEVICE)
 
     def name(self) -> str:
         """Returns the name of the embedding function/model for ChromaDB validation."""

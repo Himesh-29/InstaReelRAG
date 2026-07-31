@@ -1,8 +1,6 @@
 # Environments
 venv/
 .env
-.env*
-*.env
 
 # Python artifacts
 __pycache__/
@@ -13,11 +11,16 @@ __pycache__/
 dist/
 build/
 
-# Temporary Scraped Media & Logs
+# Database and Downloads
+instareelrag.db
+chromadb/
 downloads/
-logs/
+bm25_index.pkl
 *.log
 
 # IDEs
 .vscode/
 .idea/
+
+# macOS
+.DS_Store

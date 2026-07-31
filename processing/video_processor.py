@@ -1,10 +1,8 @@
 import os
 import cv2
 from openai import OpenAI
-from dotenv import load_dotenv
 from config.logger import setup_logger
 
-load_dotenv()
 logger = setup_logger("VideoProcessor")
 
 class VideoProcessor:
@@ -45,12 +43,10 @@ class VideoProcessor:
         # Load CLIP model lazily once per instance to prevent GPU VRAM leak/accumulation across reels
         from sentence_transformers import SentenceTransformer, util
         from PIL import Image
-        import torch
+        from config import DEVICE
         if self.clip_model is None:
-            from config import get_device
-            device = get_device()
-            logger.info(f"Loading CLIP model '{config['clip_model']}' on device: {device.upper()}...")
-            self.clip_model = SentenceTransformer(config["clip_model"], device=device)
+            logger.info(f"Loading CLIP model '{config['clip_model']}' on device: {DEVICE.upper()}...")
+            self.clip_model = SentenceTransformer(config["clip_model"], device=DEVICE)
         
         accepted_paths = []
         last_embedding = None
@@ -109,12 +105,15 @@ class VideoProcessor:
             del current_embedding
         except NameError:
             pass
-        from config import clear_gpu_memory
-        clear_gpu_memory()
+        try:
+            from config import ECOSYSTEM
+            ECOSYSTEM.clear_gpu_cache()
+        except Exception:
+            pass
         return accepted_paths
 
     def extract_audio(self, video_path: str, output_audio_path: str) -> bool:
-        """Extracts audio from video using imageio-ffmpeg binary (no system PATH required)."""
+        """Extracts audio from video using imageio-ffmpeg binary via the cross-platform ECOSYSTEM module."""
         if not os.path.exists(video_path):
             return False
             
@@ -124,31 +123,8 @@ class VideoProcessor:
         except ImportError:
             ffmpeg_exe = "ffmpeg"
 
-        # Using subprocess.run with argument array to avoid Windows cmd.exe quote parsing errors on paths with spaces
-        import subprocess
-        logger.info(f"Extracting audio from '{video_path}' to '{output_audio_path}'...")
-        try:
-            cmd = [
-                ffmpeg_exe,
-                "-i", video_path,
-                "-q:a", "0",
-                "-map", "a",
-                output_audio_path,
-                "-y",
-                "-loglevel", "error"
-            res = subprocess.run(cmd, check=False)
-            if res.returncode != 0:
-                # Windows unsigned integer overflow for negative return codes (4294967274 is -22 / EINVAL, no audio stream)
-                if res.returncode in [4294967274, -22]:
-                    logger.info("Video contains no audio stream (silent Reel). Skipping audio extraction.")
-                else:
-                    logger.error(f"ffmpeg audio extraction failed with return code {res.returncode}")
-                return False
-            logger.info("Audio extraction successful.")
-            return True
-        except Exception as e:
-            logger.error(f"Failed to extract audio with ffmpeg: {e}")
-            return False
+        from config import ECOSYSTEM
+        return ECOSYSTEM.execute_ffmpeg_audio_extraction(video_path, output_audio_path, ffmpeg_exe)
 
     def transcribe_audio(self, audio_path: str) -> str:
         """Transcribes audio using OpenAI Whisper API."""

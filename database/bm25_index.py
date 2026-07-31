@@ -29,7 +29,6 @@ class BM25Index:
 
     def add_documents(self, documents: list[str], ids: list[str]):
         """Incrementally indexes new documents into the SQLite FTS5 BM25 index."""
-        self._init_fts_table()
         with self.engine.connect() as conn:
             for doc_id, doc_content in zip(ids, documents):
                 conn.exec_driver_sql("DELETE FROM bm25_fts WHERE id = ?", (doc_id,))
@@ -40,16 +39,11 @@ class BM25Index:
             conn.commit()
             logger.info(f"Indexed {len(documents)} documents into SQLite FTS5 BM25 table.")
 
-    def build_bm25_index(self, documents: list[str], ids: list[str]):
-        """Wrapper for add_documents to maintain backwards compatibility."""
-        self.add_documents(documents, ids)
-
     def load_or_build(self, vector_store) -> bool:
         """
         Checks if the SQLite FTS5 index document count matches the VectorStore count.
         If empty or out-of-sync, populates it from the VectorStore.
         """
-        self._init_fts_table()
         vec_count = vector_store.count()
         if vec_count == 0:
             logger.info("VectorStore is empty. No documents to index into BM25.")
@@ -77,7 +71,6 @@ class BM25Index:
         """
         if top_k is None:
             top_k = get_config()["retrieval"]["hybrid_top_k"]
-        self._init_fts_table()
         words = [w for w in re.findall(r'\w+', query) if len(w) > 1]
         if not words:
             return []

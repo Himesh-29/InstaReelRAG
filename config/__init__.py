@@ -1,4 +1,21 @@
-from .config import get_config, CONFIG, get_llm_client_and_model, get_device, clear_gpu_memory
-from .logger import setup_logger
+from dotenv import load_dotenv
+load_dotenv(override=True)
 
-__all__ = ["get_config", "CONFIG", "get_llm_client_and_model", "setup_logger", "get_device", "clear_gpu_memory"]
+from .config import get_config, CONFIG, get_llm_client_and_model, get_llm_chat_completion
+from .logger import setup_logger
+from .ecosystem import get_ecosystem
+
+ECOSYSTEM = get_ecosystem()
+DEVICE = ECOSYSTEM.device
+
+__all__ = [
+    "get_config",
+    "CONFIG",
+    "get_llm_client_and_model",
+    "get_llm_chat_completion",
+    "setup_logger",
+    "ECOSYSTEM",
+    "DEVICE",
+    "get_ecosystem"
+]
+

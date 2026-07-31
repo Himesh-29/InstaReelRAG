@@ -9,8 +9,6 @@ logger = setup_logger("IGScraper")
 
 class IGScraper:
     def __init__(self, download_dir: str = "./downloads"):
-        from dotenv import load_dotenv
-        load_dotenv(override=True)
         self.L = instaloader.Instaloader(
             download_videos=True,
             download_video_thumbnails=False,
@@ -22,16 +20,15 @@ class IGScraper:
         )
         self.download_dir = download_dir
         
-        # Update session with browser-like headers to bypass GraphQL 403 blocks
-        headers = {
+        # Load session headers dynamically from config.json to bypass GraphQL 403 blocks
+        from config import get_config
+        ig_config = get_config().get("instagram", {})
+        self.headers = ig_config.get("headers", {
             "X-IG-App-ID": "936619743392459",
             "X-ASBD-ID": "198387",
-            "User-Agent": (
-                "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
-                "AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36"
-            ),
-        }
-        self.L.context._session.headers.update(headers)
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36"
+        })
+        self.L.context._session.headers.update(self.headers)
         
         # Optionally login to avoid rate limits; otherwise scrape anonymously
         ig_user = os.environ.get("INSTAGRAM_USERNAME")
@@ -75,18 +72,13 @@ class IGScraper:
         except Exception as e:
             logger.warning(f"Standard GraphQL query failed for '{username}' ({type(e).__name__}). Trying fallback 'web_profile_info' endpoint...")
             url = f"https://www.instagram.com/api/v1/users/web_profile_info/?username={username}"
-            headers = {
-                "X-IG-App-ID": "936619743392459",
-                "X-ASBD-ID": "198387",
+            fallback_headers = {
                 "Referer": f"https://www.instagram.com/{username}/",
                 "Accept": "application/json, text/plain, */*",
-                "User-Agent": (
-                    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
-                    "AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36"
-                ),
             }
+            fallback_headers.update(self.headers)
             try:
-                resp = self.L.context._session.get(url, headers=headers)
+                resp = self.L.context._session.get(url, headers=fallback_headers)
                 if resp.status_code == 200:
                     data = resp.json()
                     user_data = data.get("data", {}).get("user")

@@ -17,8 +17,6 @@ def get_llm_client_and_model():
     Supports 'openrouter', 'openai', 'groq', 'gemini', or custom providers.
     """
     from openai import OpenAI
-    from dotenv import load_dotenv
-    load_dotenv(override=True)
     
     llm_config = CONFIG.get("llm", {})
     provider_name = llm_config.get("provider", "openrouter")
@@ -36,27 +34,23 @@ def get_llm_client_and_model():
     client = OpenAI(api_key=api_key, base_url=base_url)
     return client, model_name
 
-def get_device() -> str:
+def get_llm_chat_completion(messages: list[dict], temperature: float = None, max_tokens: int = None) -> str:
     """
-    Returns 'cuda' if a GPU is available via PyTorch, otherwise 'cpu'.
-    Centralized here so developers don't need to duplicate torch.cuda checks across modules.
+    Unified helper function that invokes the configured LLM provider and returns the message content.
+    Encapsulates client instantiation, model selection, and default parameter fallback.
     """
-    try:
-        import torch
-        return "cuda" if torch.cuda.is_available() else "cpu"
-    except ImportError:
-        return "cpu"
+    llm_config = CONFIG.get("llm", {})
+    if temperature is None:
+        temperature = llm_config.get("temperature", 0.1)
+    if max_tokens is None:
+        max_tokens = llm_config.get("max_tokens", 512)
 
-def clear_gpu_memory():
-    """
-    Clears PyTorch CUDA cache and runs garbage collection if CUDA is available.
-    Use after processing heavy models (Whisper, CLIP, etc.) to keep VRAM clean.
-    """
-    try:
-        import torch
-        import gc
-        gc.collect()
-        if torch.cuda.is_available():
-            torch.cuda.empty_cache()
-    except ImportError:
-        pass
+    client, model_name = get_llm_client_and_model()
+    response = client.chat.completions.create(
+        model=model_name,
+        messages=messages,
+        temperature=temperature,
+        max_tokens=max_tokens
+    )
+    return response.choices[0].message.content
+

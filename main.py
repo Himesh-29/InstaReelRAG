@@ -1,10 +1,8 @@
 import argparse
 import os
 import uuid
-from dotenv import load_dotenv
 from config import setup_logger
 
-load_dotenv(override=True)
 logger = setup_logger()
 
 def ingest(channel_name: str, max_posts: int):
@@ -123,9 +121,8 @@ def ingest(channel_name: str, max_posts: int):
             
         # Free GPU VRAM cache after processing each reel so memory never piles up across thousands of reels
         try:
-            import torch
-            if torch.cuda.is_available():
-                torch.cuda.empty_cache()
+            from config import ECOSYSTEM
+            ECOSYSTEM.clear_gpu_cache()
         except Exception:
             pass
             
@@ -153,28 +150,17 @@ def chat_ui():
     has_docs = retriever.ensure_indexed()
         
     reranker = LocalReranker()
-    generator = ContextAnswerGenerator(use_openrouter=True)
-    query_transformer = QueryTransformer(use_openrouter=True)
+    generator = ContextAnswerGenerator()
+    query_transformer = QueryTransformer()
     
-    from rag.guardrails import PromptGuardrail
-    guardrail = PromptGuardrail()
-    
-    from database.frames_db import get_frame_thumbnails_html
-
     def chat_function(message, history):
         if not has_docs:
             return "No documents found in the database. Please run the ingest command first!"
             
         logger.info(f"User Chat Input: '{message}'")
         
-        # 0. Validate User Input with Configurable Guardrails (Guardrails AI)
-        is_safe, sanitized_message, reason = guardrail.validate_input(message)
-        if not is_safe:
-            logger.warning(f"Guardrail blocked input: {reason}")
-            return f"⚠️ **Prompt Blocked by Guardrails:** {reason}\n\n*{guardrail.fallback_message}*"
-        
         # 1. Rephrase Query
-        optimized_query = query_transformer.rephrase_query(sanitized_message, history)
+        optimized_query = query_transformer.rephrase_query(message, history)
         if optimized_query != message:
             logger.info(f"Optimized Query: '{optimized_query}'")
         
@@ -205,25 +191,18 @@ def chat_ui():
         reranked = reranker.rerank(optimized_query, hybrid_results)
         logger.info(f"Reranking completed: top {len(reranked)} documents selected.")
         
-        # 5. Generate Answer & Validate Output with Guardrails AI
-        raw_answer = generator.generate_answer(message, reranked)
+        # 5. Generate Answer
+        answer = generator.generate_answer(message, reranked)
         logger.info("Answer generated successfully.")
         
-        is_valid, answer, out_reason = guardrail.validate_output(raw_answer)
-        if not is_valid:
-            logger.warning(f"Guardrail flagged output: {out_reason}")
-            return f"⚠️ **Output Flagged by Guardrails:** {out_reason}\n\n*{guardrail.fallback_message}*"
-        
-        # 6. Build Citations Accordion with Visual WebP Frame Thumbnails
-        citations_html = "\n\n<details>\n<summary>📚 <b>View Retrieved Context (Citations & Visual Frames)</b></summary>\n\n"
+        # 6. Build Citations Accordion
+        citations_html = "\n\n<details>\n<summary>📚 <b>View Retrieved Context (Citations)</b></summary>\n\n"
         for i, doc in enumerate(reranked):
             url = doc['metadata'].get('url', 'Unknown URL')
-            shortcode = doc['metadata'].get('shortcode', '')
             score = doc.get('rerank_score', 0)
             content = doc.get('content', '')
             
-            citations_html += f"**Source {i+1}** (Score: {score:.2f}) - [Link to Reel]({url})\n\n"
-            citations_html += get_frame_thumbnails_html(db_session, shortcode, max_frames=3)
+            citations_html += f"**Source {i+1}** (Score: {score:.2f}) - [Link]({url})\n"
             citations_html += f"```text\n{content}\n```\n\n"
             
         citations_html += "</details>"

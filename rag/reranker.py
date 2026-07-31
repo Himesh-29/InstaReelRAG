@@ -1,16 +1,16 @@
 from sentence_transformers import CrossEncoder
-from config import get_config, get_device
+from config import get_config
 from config.logger import setup_logger
 
 logger = setup_logger("LocalReranker")
 
 class LocalReranker:
     def __init__(self, model_name=None):
+        from config import DEVICE
         config = get_config()
         self.model_name = model_name or config["retrieval"]["reranker_model"]
-        device = get_device()
-        logger.info(f"Loading reranker model '{self.model_name}' on device: {device.upper()}...")
-        self.model = CrossEncoder(self.model_name, device=device)
+        logger.info(f"Loading reranker model '{self.model_name}' on device: {DEVICE.upper()}...")
+        self.model = CrossEncoder(self.model_name, device=DEVICE)
         
     def rerank(self, query: str, documents: list[dict], top_k: int = None) -> list[dict]:
         """
