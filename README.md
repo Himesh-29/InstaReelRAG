@@ -4,7 +4,7 @@ InstaReelRAG is an advanced, production-grade multimodal Retrieval-Augmented Gen
 
 ---
 
-## Why We Built This
+## Why I Built This
 
 Ever watched an Instagram Reel showcasing a stunning desk setup, a custom mechanical keyboard, or a must-have productivity app—only to lose track of it weeks later? 
 
