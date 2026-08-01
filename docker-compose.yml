@@ -1,0 +1,23 @@
+services:
+  instareelrag:
+    build: .
+    container_name: instareelrag-app
+    restart: always
+    env_file:
+      - .env
+    volumes:
+      - ./database:/app/database
+      - ./chromadb:/app/chromadb
+      - ./downloads:/app/downloads
+    ports:
+      - "127.0.0.1:7860:7860"
+
+  cloudflared:
+    image: cloudflare/cloudflared:latest
+    container_name: instareelrag-tunnel
+    restart: always
+    command: tunnel --no-autoupdate run --token ${CLOUDFLARE_TUNNEL_TOKEN}
+    env_file:
+      - .env
+    depends_on:
+      - instareelrag

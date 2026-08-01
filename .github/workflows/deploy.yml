@@ -1,0 +1,22 @@
+name: Deploy 24x7 App to Oracle Cloud
+
+on:
+  push:
+    branches: [ "main" ]
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Deploy to Oracle Cloud VM via SSH
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.OCI_HOST }}
+          username: ${{ secrets.OCI_USERNAME }}
+          key: ${{ secrets.OCI_SSH_KEY }}
+          script: |
+            cd ~/InstaReelRAG
+            git pull origin main
+            docker compose up --build -d
+            docker system prune -f
