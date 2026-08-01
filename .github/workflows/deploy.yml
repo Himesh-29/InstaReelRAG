@@ -18,5 +18,6 @@ jobs:
           script: |
             cd ~/InstaReelRAG
             git pull origin main
+            git lfs pull
             docker compose up --build -d
             docker system prune -f
