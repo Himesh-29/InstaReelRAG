@@ -135,8 +135,8 @@ def ingest(channel_name: str, max_posts: int):
     else:
         logger.info("=== Ingestion complete. No new documents to add ===")
 
-def chat_ui():
-    print("Launching Gradio Chat Interface...")
+def chat_ui(server_name: str = "0.0.0.0", server_port: int = 7860):
+    print(f"Launching Gradio Chat Interface on {server_name}:{server_port}...")
     import gradio as gr
     from database.metadata_db import init_db
     from rag.retriever import HybridRetriever
@@ -214,7 +214,7 @@ def chat_ui():
         title="InstaReelRAG Assistant",
         description="Ask questions about the scraped Instagram setups and tech gear!",
     )
-    demo.launch(server_name="127.0.0.1", server_port=9876, share=False, theme="soft")
+    demo.launch(server_name=server_name, server_port=server_port, share=False, theme="soft")
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="InstaReelRAG CLI")
@@ -227,12 +227,14 @@ if __name__ == "__main__":
     
     # Chat command
     chat_parser = subparsers.add_parser("chat", help="Launch the Gradio Chat UI")
+    chat_parser.add_argument("--server-name", type=str, default="0.0.0.0", help="Host interface to bind to")
+    chat_parser.add_argument("--server-port", type=int, default=7860, help="Port to bind to")
     
     args = parser.parse_args()
     
     if args.command == "ingest":
         ingest(args.channel, args.max_posts)
     elif args.command == "chat":
-        chat_ui()
+        chat_ui(server_name=args.server_name, server_port=args.server_port)
     else:
         parser.print_help()
