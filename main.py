@@ -1,4 +1,5 @@
 import argparse
+import base64
 import os
 import uuid
 from config import setup_logger
@@ -197,12 +198,25 @@ def chat_ui(server_name: str = "0.0.0.0", server_port: int = 7860):
         
         # 6. Build Citations Accordion
         citations_html = "\n\n<details>\n<summary>📚 <b>View Retrieved Context (Citations)</b></summary>\n\n"
+        from database.frames_db import get_frame_blobs_for_shortcode
         for i, doc in enumerate(reranked):
             url = doc['metadata'].get('url', 'Unknown URL')
+            shortcode = doc['metadata'].get('shortcode', '')
             score = doc.get('rerank_score', 0)
             content = doc.get('content', '')
             
-            citations_html += f"**Source {i+1}** (Score: {score:.2f}) - [Link]({url})\n"
+            citations_html += f"**Source {i+1}** (Score: {score:.2f}) - [Link]({url})\n\n"
+            
+            # Embed compressed WebP thumbnail frames side-by-side with zero extra text
+            if shortcode:
+                frame_blobs = get_frame_blobs_for_shortcode(shortcode, limit=5)
+                if frame_blobs:
+                    citations_html += '<div style="display: flex !important; flex-direction: row !important; flex-wrap: nowrap !important; gap: 8px !important; align-items: center !important; overflow-x: auto !important; margin: 6px 0 !important;">'
+                    for fb in frame_blobs:
+                        b64_img = base64.b64encode(fb).decode('utf-8')
+                        citations_html += f'<img src="data:image/webp;base64,{b64_img}" style="height: 380px !important; width: auto !important; max-width: 20% !important; object-fit: cover !important; border-radius: 6px !important; margin: 0 !important;" />'
+                    citations_html += '</div>\n\n'
+            
             citations_html += f"```text\n{content}\n```\n\n"
             
         citations_html += "</details>"

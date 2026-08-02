@@ -19,7 +19,14 @@ class QueryTransformer:
             
         # Format history
         history_text = ""
-        for role, msg in chat_history:
+        for item in chat_history:
+            if isinstance(item, dict):
+                role = str(item.get("role", "user"))
+                msg = str(item.get("content", ""))
+            elif isinstance(item, (list, tuple)) and len(item) == 2:
+                role, msg = str(item[0]), str(item[1])
+            else:
+                continue
             history_text += f"{role.capitalize()}: {msg}\n"
             
         system_prompt = self.config["query_rephraser_system_prompt"]

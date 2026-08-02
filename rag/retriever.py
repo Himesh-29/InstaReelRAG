@@ -90,6 +90,13 @@ class HybridRetriever:
         final_results = []
         for doc_id in sorted_ids:
             doc = merged_docs[doc_id]
+            if not doc.get('metadata') and self.vector_store:
+                try:
+                    meta_res = self.vector_store.collection.get(ids=[doc_id], include=["metadatas"])
+                    if meta_res and meta_res.get("metadatas") and meta_res["metadatas"]:
+                        doc['metadata'] = meta_res["metadatas"][0]
+                except Exception:
+                    pass
             doc['hybrid_score'] = combined_scores[doc_id]
             final_results.append(doc)
             

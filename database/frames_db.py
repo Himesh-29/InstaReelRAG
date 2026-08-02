@@ -58,3 +58,33 @@ def get_frame_blob(video_shortcode: str, frame_idx: int, db_path: str = DEFAULT_
     except Exception as e:
         logger.warning(f"Error retrieving frame blob from frames.db for '{video_shortcode}': {e}")
         return None
+
+def _get_filename_from_shortcode(shortcode: str) -> str:
+    """Helper: maps an Instagram shortcode to its local filename prefix in instareelrag.db."""
+    for db_path in ["instareelrag.db", "database/instareelrag.db"]:
+        if os.path.exists(db_path):
+            try:
+                with sqlite3.connect(db_path) as conn:
+                    row = conn.execute("SELECT local_video_path FROM videos WHERE shortcode = ?", (shortcode,)).fetchone()
+                    if row and row[0]:
+                        return row[0].replace('\\', '/').split('/')[-1].split('.')[0]
+            except Exception:
+                pass
+    return shortcode
+
+def get_frame_blobs_for_shortcode(video_shortcode: str, limit: int = 3, db_path: str = DEFAULT_FRAMES_DB_PATH) -> list[bytes]:
+    """Retrieves up to `limit` WebP thumbnail blobs for a given shortcode or filename key."""
+    if not os.path.exists(db_path):
+        return []
+
+    lookup_key = _get_filename_from_shortcode(video_shortcode)
+    try:
+        with sqlite3.connect(db_path) as conn:
+            rows = conn.execute(
+                "SELECT webp_bytes FROM frame_blobs WHERE video_shortcode IN (?, ?) ORDER BY frame_idx ASC LIMIT ?",
+                (video_shortcode, lookup_key, limit)
+            ).fetchall()
+            return [r[0] for r in rows if r[0]]
+    except Exception as e:
+        logger.warning(f"Error retrieving frame blobs for '{video_shortcode}': {e}")
+        return []
