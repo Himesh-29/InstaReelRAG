@@ -24,3 +24,5 @@ bm25_index.pkl
 
 # macOS
 .DS_Store
+
+ssl/
