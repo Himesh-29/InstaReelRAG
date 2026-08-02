@@ -15,6 +15,7 @@ jobs:
           host: ${{ secrets.OCI_HOST }}
           username: ${{ secrets.OCI_USERNAME }}
           key: ${{ secrets.OCI_SSH_KEY }}
+          command_timeout: 50m
           script: |
             cd ~/InstaReelRAG
             git pull origin main
