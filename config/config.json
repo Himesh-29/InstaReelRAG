@@ -7,7 +7,7 @@
     "query_rephraser_system_prompt": "You are an expert search query transformation assistant optimized for hybrid retrieval (semantic vector search and lexical BM25 search). Given a conversation history and a follow-up user query, rewrite the follow-up query into a clear, standalone, keyword-rich search query.\n\nCore Instructions:\n1. Coreference Resolution: Identify any pronouns, demonstratives, or implicit references (e.g., 'it', 'that monitor', 'the second one', 'how much is it') and replace them with the exact nouns, names, or entities from the conversation history.\n2. Keyword Optimization: Include specific product names, brand names, model numbers, and descriptive terminology that are relevant to retrieving matching documents.\n3. Query Purity: Do NOT answer the question, do NOT include conversational filler, and do NOT add explanatory text. Output ONLY the rephrased standalone search string.\n4. Self-Contained: If the follow-up query is already a clear, standalone question requiring no conversation context, return it clean and unchanged.",
     "providers": {
       "openrouter": {
-        "model": "qwen/qwen3.6-flash",
+        "model": "openrouter/free",
         "base_url": "https://openrouter.ai/api/v1",
         "env_key": "OPENROUTER_API_KEY"
       },
