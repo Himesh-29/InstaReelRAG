@@ -144,6 +144,7 @@ def chat_ui(server_name: str = "0.0.0.0", server_port: int = 7860):
     from rag.reranker import LocalReranker
     from rag.generator import ContextAnswerGenerator
     from rag.query_transform import QueryTransformer
+    from rag.guardrails import Guardrails
     
     db_session = init_db()
     
@@ -153,12 +154,19 @@ def chat_ui(server_name: str = "0.0.0.0", server_port: int = 7860):
     reranker = LocalReranker()
     generator = ContextAnswerGenerator()
     query_transformer = QueryTransformer()
+    guardrails = Guardrails()
     
     def chat_function(message, history):
         if not has_docs:
             return "No documents found in the database. Please run the ingest command first!"
             
         logger.info(f"User Chat Input: '{message}'")
+        
+        # GUARDRAIL 1: Check Input Safety (Semantic + LLM)
+        is_safe_input, input_reason = guardrails.check_input_safety(message)
+        if not is_safe_input:
+            logger.warning(f"Input guardrail triggered: {input_reason}")
+            return guardrails.refusal_message
         
         # 1. Rephrase Query
         optimized_query = query_transformer.rephrase_query(message, history)
@@ -195,6 +203,12 @@ def chat_ui(server_name: str = "0.0.0.0", server_port: int = 7860):
         # 5. Generate Answer
         answer = generator.generate_answer(message, reranked)
         logger.info("Answer generated successfully.")
+        
+        # GUARDRAIL 2: Check Output Safety (Semantic + LLM)
+        is_safe_output, output_reason = guardrails.check_output_safety(answer)
+        if not is_safe_output:
+            logger.warning(f"Output guardrail triggered: {output_reason}")
+            return guardrails.refusal_message
         
         # 6. Build Citations Accordion
         citations_html = "\n\n<details>\n<summary>📚 <b>View Retrieved Context (Citations)</b></summary>\n\n"

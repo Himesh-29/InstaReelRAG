@@ -34,7 +34,7 @@ def get_llm_client_and_model():
     client = OpenAI(api_key=api_key, base_url=base_url)
     return client, model_name
 
-def get_llm_chat_completion(messages: list[dict], temperature: float = None, max_tokens: int = None) -> str:
+def get_llm_chat_completion(messages: list[dict], temperature: float = None, max_tokens: int = None, response_format: dict = None) -> str:
     """
     Unified helper function that invokes the configured LLM provider and returns the message content.
     Encapsulates client instantiation, model selection, and default parameter fallback.
@@ -46,11 +46,15 @@ def get_llm_chat_completion(messages: list[dict], temperature: float = None, max
         max_tokens = llm_config.get("max_tokens", 512)
 
     client, model_name = get_llm_client_and_model()
-    response = client.chat.completions.create(
-        model=model_name,
-        messages=messages,
-        temperature=temperature,
-        max_tokens=max_tokens
-    )
+    kwargs = {
+        "model": model_name,
+        "messages": messages,
+        "temperature": temperature,
+        "max_tokens": max_tokens
+    }
+    if response_format:
+        kwargs["response_format"] = response_format
+        
+    response = client.chat.completions.create(**kwargs)
     return response.choices[0].message.content
 

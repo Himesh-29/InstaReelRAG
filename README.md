@@ -67,7 +67,8 @@ Traditional bookmarking only saves URLs. InstaReelRAG goes deeper by combining c
 - **4. Sequential Streaming Ingestion & 100% Media Eradication**: Checks candidates against the database before downloading any media, then downloads, processes, and eradicates `.mp4` videos, `.mp3` audio, `.webp` thumbnails, and companion `.txt`/`.json`/`.xz` files sequentially one by one—capping peak disk usage at just 1 video file.
 - **5. O(1) Unified Hybrid Search & Re-Ranking**: Merges SQLite FTS5 Okapi BM25 keyword matching with ChromaDB semantic embeddings (`all-MiniLM-L6-v2`) and a CUDA Cross-Encoder re-ranker (`ms-marco-MiniLM-L-6-v2`), ranking via lightweight UUIDs with O(1) payload lookups.
 - **6. Conversational Coreference Resolution**: Uses an LLM `QueryTransformer` to rewrite follow-up questions (*"How much does that keyboard cost?"*) into standalone search queries.
-- **7. Per-Run Timestamped Logging with Auto-Rotation**: Generates timestamped log files in `logs/` (`run_YYYY-MM-DD_HH-MM-SS.log`) with automatic pruning of older logs based on `max_log_files`.
+- **7. 2-Layer Modern Safety Guardrails**: Dynamically enforces input and output safety through a pure `SemanticFilter` (using `all-MiniLM-L6-v2` against clean policy vectors) and an `LLMSafetyFilter` judge, avoiding hardcoded offensive dictionaries in the codebase entirely.
+- **8. Per-Run Timestamped Logging with Auto-Rotation**: Generates timestamped log files in `logs/` (`run_YYYY-MM-DD_HH-MM-SS.log`) with automatic pruning of older logs based on `max_log_files`.
 
 ---
 
@@ -79,6 +80,7 @@ Traditional bookmarking only saves URLs. InstaReelRAG goes deeper by combining c
 - **4. Persistent Model Residency with Transient VRAM Eviction**: Reloading PyTorch models per Reel kills throughput, but retaining intermediate tensors causes out-of-memory errors. We load AI models once into GPU VRAM for the entire run, while explicitly deleting temporary Reel dataset tensors (`del current_embedding, last_embedding`) and clearing CUDA cache after each Reel.
 - **5. Conversational Coreference Resolution & Grounded Citations**: Multi-turn chat questions lack context for stateless vector search. An LLM-powered `QueryTransformer` rewrites conversational follow-ups into standalone queries, and answers are paired with a collapsible Citations Accordion showing exact relevance scores, Instagram URLs, and spoken transcripts.
 - **6. Sequential Streaming Ingestion (O(1) Disk Footprint)**: Batch downloading Reels upfront wastes network bandwidth and disk space if videos are already indexed. We check shortcodes against the database before downloading any media, then download, process, and eradicate Reels sequentially one by one—capping peak disk usage at just 1 video file regardless of library size.
+- **7. Zero-Dictionary Modern Guardrails**: Hardcoding hate-speech dictionaries into a public repository is a security and professional anti-pattern. We architected a 2-Layer defense using our existing `all-MiniLM-L6-v2` embedding model to semantically filter user inputs against abstract policy concepts, backed by an LLM-as-a-Judge for contextual sentiment verification.
 
 ---
 

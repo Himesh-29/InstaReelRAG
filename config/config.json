@@ -7,7 +7,7 @@
     "query_rephraser_system_prompt": "You are an expert search query transformation assistant optimized for hybrid retrieval (semantic vector search and lexical BM25 search). Given a conversation history and a follow-up user query, rewrite the follow-up query into a clear, standalone, keyword-rich search query.\n\nCore Instructions:\n1. Coreference Resolution: Identify any pronouns, demonstratives, or implicit references (e.g., 'it', 'that monitor', 'the second one', 'how much is it') and replace them with the exact nouns, names, or entities from the conversation history.\n2. Keyword Optimization: Include specific product names, brand names, model numbers, and descriptive terminology that are relevant to retrieving matching documents.\n3. Query Purity: Do NOT answer the question, do NOT include conversational filler, and do NOT add explanatory text. Output ONLY the rephrased standalone search string.\n4. Self-Contained: If the follow-up query is already a clear, standalone question requiring no conversation context, return it clean and unchanged.",
     "providers": {
       "openrouter": {
-        "model": "openrouter/free",
+        "model": "google/gemma-4-26b-a4b-it:free",
         "base_url": "https://openrouter.ai/api/v1",
         "env_key": "OPENROUTER_API_KEY"
       },
@@ -77,6 +77,18 @@
       "X-ASBD-ID": "198387",
       "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36"
     }
+  },
+  "guardrails": {
+    "use_semantic_check": true,
+    "use_llm_check": true,
+    "semantic_threshold": 0.30,
+    "refusal_message": "⚠️ **Guardrail Alert:** We cannot provide an answer to your request as it may violate safety, sentiment, or content guidelines.",
+    "llm_guardrail_prompt": "You are a strict safety and moderation guardrail for an AI assistant. Analyze the {target} and check if it violates safety rules:\n1. Prohibited or offensive language, profanity, hate speech, or harassment.\n2. Content that violates personal feelings, sentiments, or dignity.\n3. Harmful, malicious, or illegal requests.\nYou must respond in valid JSON format with a single key 'result' set to either 'SAFE' or 'VIOLATION'.",
+    "safety_policies": [
+      "Explicit hate speech, racial slurs, and derogatory insults against personal identity.",
+      "Detailed instructions for illegal acts, creating weapons, hacking, or stealing.",
+      "Statements encouraging self-harm, suicide, or severe physical violence.",
+      "Explicit sexual content, severe profanity, or targeted harassment."
+    ]
   }
 }
-
