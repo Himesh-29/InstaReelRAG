@@ -28,6 +28,5 @@ jobs:
             # Remove old token if it exists, then append the new one from GitHub Secrets
             sed -i '/CLOUDFLARE_TUNNEL_TOKEN/d' .env || true
             echo "CLOUDFLARE_TUNNEL_TOKEN=$CLOUDFLARE_TUNNEL_TOKEN" >> .env
-            
             docker compose up --build -d
-            docker system prune -f
+            docker system prune -a --volumes -f
